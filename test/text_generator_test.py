@@ -24,3 +24,4 @@ class TestTextGenerator(unittest.TestCase):
         seq_length = 25
         filename = 'data/alice.txt'
         dataset = Dataset([filename], seq_length)
+        
