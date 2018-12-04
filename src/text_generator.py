@@ -93,6 +93,28 @@ class RNNTextGenerator:
 
         targets: np.ndarray
             A batch of target sequences.
+        """
+        self.tf_sess.run(
+            self.tf_train,
+            feed_dict={
+                self.tf_input: inputs,
+                self.tf_target: targets,
+            },
+        )
+        return self
+
+    def predict(self):
+        pass
+
+    def score(self, inputs, targets):
+        """Get the score for the batch
+        Arguments
+        ======================================================================
+        inputs: np.ndarray
+            A batch of input sequences.
+
+        targets: np.ndarray
+            A batch of target sequences.
 
         Returns
         ======================================================================
@@ -109,9 +131,3 @@ class RNNTextGenerator:
                 self.tf_target: targets,
             },
         )
-
-    def predict(self):
-        pass
-
-    def score(self):
-        pass

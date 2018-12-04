@@ -40,7 +40,8 @@ class TestTextGenerator(unittest.TestCase):
             neurons_per_cell,
         )
         inputs, targets = random_data(batch_size, seq_length, vocab_size)
-        print('[acc, loss]: ', text_gen.fit(inputs, targets))
+        print('fit:', text_gen.fit(inputs, targets))
+        print('score:', text_gen.score(inputs, targets))
 
     def test_combo(self):
         batch_size = 5
