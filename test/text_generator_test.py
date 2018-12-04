@@ -7,21 +7,43 @@ from src.text_generator import RNNTextGenerator
 from src.dataset import Dataset
 
 
-class TestTextGenerator(unittest.TestCase):
-    def test_constructor(self):
-        text_gen = RNNTextGenerator()
+def random_label(vocab_size):
+    """randomly assign a label
+    """
+    label = np.random.randint(vocab_size)
+    seq = np.zeros(vocab_size)
+    seq[label] = 1.0
+    return seq
 
+
+def random_data(batch_size, seq_length, vocab_size):
+    """generate random data
+    """
+    inputs = []
+    targets = []
+    for _ in range(batch_size):
+        labels = [random_label(vocab_size) for _ in range(seq_length + 1)]
+        inputs.append(labels[:-1])
+        targets.append(labels[1:])
+    return np.array(inputs), np.array(targets)
+
+
+class TestTextGenerator(unittest.TestCase):
     def test_fit(self):
-        text_gen = RNNTextGenerator()
-        inputs = np.array([
-            [1, 1, 1],
-            [2, 2, 2],
-            [1, 1, 2],
-        ])
-        text_gen.fit(inputs, inputs, 2)
+        seq_length = 10
+        vocab_size = 4
+        neurons_per_cell = 10
+        batch_size = 2
+        text_gen = RNNTextGenerator(
+            seq_length,
+            vocab_size,
+            neurons_per_cell,
+        )
+        inputs, targets = random_data(batch_size, seq_length, vocab_size)
+        print('[acc, loss]: ', text_gen.fit(inputs, targets))
+
     def test_combo(self):
         batch_size = 5
         seq_length = 25
         filename = 'data/alice.txt'
         dataset = Dataset([filename], seq_length)
-        
