@@ -29,7 +29,7 @@ def random_data(batch_size, seq_length, vocab_size):
 
 
 class TestTextGenerator(unittest.TestCase):
-    def test_fit(self):
+    def test_on_random_data(self):
         seq_length = 10
         vocab_size = 4
         neurons_per_cell = 10
@@ -39,9 +39,12 @@ class TestTextGenerator(unittest.TestCase):
             vocab_size,
             neurons_per_cell,
         )
+        print('first fit')
         inputs, targets = random_data(batch_size, seq_length, vocab_size)
         print('fit:', text_gen.fit(inputs, targets))
         print('score:', text_gen.score(inputs, targets))
+        print('predictions:', text_gen.predict(inputs))
+        print('true targets:', targets)
 
     def test_combo(self):
         batch_size = 5

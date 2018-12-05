@@ -69,9 +69,10 @@ class RNNTextGenerator:
                 self.tf_train = tf.train.AdamOptimizer().minimize(
                     self.tf_loss
                 )
+                self.tf_predict = tf.argmax(self.tf_logits, 1)
                 self.tf_acc = tf.reduce_mean(tf.cast(
                     tf.equal(
-                        tf.argmax(self.tf_logits, 1),
+                        self.tf_predict,
                         tf.argmax(self.tf_target, 1),
                     ),
                     tf.float32
@@ -103,9 +104,6 @@ class RNNTextGenerator:
         )
         return self
 
-    def predict(self):
-        pass
-
     def score(self, inputs, targets):
         """Get the score for the batch
         Arguments
@@ -129,5 +127,28 @@ class RNNTextGenerator:
             feed_dict={
                 self.tf_input: inputs,
                 self.tf_target: targets,
+            },
+        )
+
+    def predict(
+            self,
+            inputs,
+    ):
+        """Generate the text using the inputs
+        Arguments
+        ======================================================================
+        inputs: np.ndarray
+            A batch of input sequences.
+
+
+        Returns
+        ======================================================================
+        predictions: np.ndarray
+            A batch of target sequences.
+        """
+        return self.tf_sess.run(
+            self.tf_predict,
+            feed_dict={
+                self.tf_input: inputs,
             },
         )
