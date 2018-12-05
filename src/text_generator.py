@@ -10,7 +10,8 @@ class RNNTextGenerator:
             self,
             seq_length,
             vocab_size,
-            neurons_per_cell,
+            rnn_cell=tf.nn.rnn_cell.BasicRNNCell(100),
+            optimizer=tf.train.AdamOptimizer(),
             name='RNNTextGenerator'
     ):
         """Initialize the text generator and contruct the tf graph
@@ -53,7 +54,6 @@ class RNNTextGenerator:
                 tf.int32, shape=(None, seq_length, vocab_size)
             )
             with tf.variable_scope(name):
-                rnn_cell = tf.nn.rnn_cell.BasicRNNCell(neurons_per_cell)
                 outputs, _ = tf.nn.dynamic_rnn(
                     rnn_cell,
                     tf.cast(self.tf_input, tf.float32),
@@ -66,9 +66,7 @@ class RNNTextGenerator:
                         labels=self.tf_target,
                     )
                 )
-                self.tf_train = tf.train.AdamOptimizer().minimize(
-                    self.tf_loss
-                )
+                self.tf_train = optimizer.minimize(self.tf_loss)
                 self.tf_predict = tf.argmax(self.tf_logits, 2)
                 self.tf_acc = tf.reduce_mean(tf.cast(
                     tf.equal(
