@@ -24,4 +24,7 @@ class TestTextGenerator(unittest.TestCase):
         seq_length = 25
         filename = 'data/alice.txt'
         dataset = Dataset([filename], seq_length)
+        for batch in dataset.batch(batch_size):
+            text_gen.fit(batch['input'],batch['target'],len(dataset.ix_to_char))
+        
         
