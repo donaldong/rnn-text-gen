@@ -43,7 +43,9 @@ class Dataset:
         self.text = text
         self.data = np.array([self.char_to_ix[c] for c in text])
 
-        dataset = tf.data.Dataset.from_tensor_slices(self.data)
+        dataset = tf.data.Dataset.from_tensor_slices(
+            tf.one_hot(self.data, len(vocab))
+        )
         dataset = dataset.batch(seq_length + 1, drop_remainder=True)
         self.instances = dataset.map(lambda seq: {
             'input': seq[:-1],
