@@ -69,11 +69,11 @@ class RNNTextGenerator:
                 self.tf_train = tf.train.AdamOptimizer().minimize(
                     self.tf_loss
                 )
-                self.tf_predict = tf.argmax(self.tf_logits, 1)
+                self.tf_predict = tf.argmax(self.tf_logits, 2)
                 self.tf_acc = tf.reduce_mean(tf.cast(
                     tf.equal(
                         self.tf_predict,
-                        tf.argmax(self.tf_target, 1),
+                        tf.argmax(self.tf_target, 2),
                     ),
                     tf.float32
                 ))
