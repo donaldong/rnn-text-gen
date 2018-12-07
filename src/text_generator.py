@@ -179,12 +179,12 @@ class RNNTextGenerator:
         )
 
     @staticmethod
-    def generate(saved_model, start_seq, length):
+    def sample(model, start_seq, length):
         """Generate the text using a saved model
         Arguments
         ======================================================================
-        saved_model: string
-            A path to the saved model.
+        model: RNNTextGenerator
+            The model to sample from.
 
         start_seq: int[]
             The sequence to begin with.
@@ -198,4 +198,17 @@ class RNNTextGenerator:
             The one-hot encoded character labels.
         """
         text = [None] * length
+        seq = start_seq.tolist()
+        vocab_size = len(start_seq[0])
+        for i in range(length):
+            ix = np.random.choice(
+                range(vocab_size),
+                # pred[batch 0][last item in the sequence]
+                p=model.predict([seq])[0][-1]
+            )
+            x = np.zeros(vocab_size)
+            x[ix] = 1
+            del seq[0]
+            seq.append(x)
+            text[i] = x
         return text
