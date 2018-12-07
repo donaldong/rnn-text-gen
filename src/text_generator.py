@@ -1,6 +1,8 @@
 """Authors: Alexandria Davis, Donald Dong
 """
 import tensorflow as tf
+import numpy as np
+import pickle
 
 
 class RNNTextGenerator:
@@ -10,8 +12,10 @@ class RNNTextGenerator:
             self,
             seq_length,
             vocab_size,
-            rnn_cell=tf.nn.rnn_cell.BasicRNNCell(100),
-            optimizer=tf.train.AdamOptimizer(),
+            rnn_cell=tf.nn.rnn_cell.BasicRNNCell,
+            n_neurons=100,
+            optimizer=tf.train.AdamOptimizer,
+            learning_rate=0.001,
             name='RNNTextGenerator'
     ):
         """Initialize the text generator and contruct the tf graph
@@ -29,9 +33,10 @@ class RNNTextGenerator:
         name: string
             The name of the net (for graph visualization in tensorboard).
         """
-        graph = tf.Graph()
-        self.tf_sess = tf.Session(graph=graph)
-        with graph.as_default():
+        self.name = name
+        self.tf_graph = tf.Graph()
+        with self.tf_graph.as_default():
+            self.tf_sess = tf.Session()
             # One-hot encoded input and targets
             """placeholder
             Example
@@ -54,8 +59,9 @@ class RNNTextGenerator:
                 tf.int32, shape=(None, seq_length, vocab_size)
             )
             with tf.variable_scope(name):
+                self.tf_rnn_cell = rnn_cell(n_neurons)
                 outputs, _ = tf.nn.dynamic_rnn(
-                    rnn_cell,
+                    self.tf_rnn_cell,
                     tf.cast(self.tf_input, tf.float32),
                     dtype=tf.float32,
                 )
@@ -66,7 +72,9 @@ class RNNTextGenerator:
                         labels=self.tf_target,
                     )
                 )
-                self.tf_train = optimizer.minimize(self.tf_loss)
+                self.tf_train = optimizer(
+                    learning_rate=learning_rate
+                ).minimize(self.tf_loss)
                 # Normilize the probablities
                 y = tf.math.exp(logits)
                 self.tf_prob = y / tf.reduce_sum(y, 2, keep_dims=True)
@@ -91,14 +99,15 @@ class RNNTextGenerator:
         targets: np.ndarray
             A batch of target sequences.
         """
-        self.tf_sess.run(
-            self.tf_train,
-            feed_dict={
-                self.tf_input: inputs,
-                self.tf_target: targets,
-            },
-        )
-        return self
+        with self.tf_graph.as_default():
+            self.tf_sess.run(
+                self.tf_train,
+                feed_dict={
+                    self.tf_input: inputs,
+                    self.tf_target: targets,
+                },
+            )
+            return self
 
     def score(self, inputs, targets):
         """Get the score for the batch
@@ -118,13 +127,14 @@ class RNNTextGenerator:
         loss: tf.float32
             The loss on this batch.
         """
-        return self.tf_sess.run(
-            [self.tf_acc, self.tf_loss],
-            feed_dict={
-                self.tf_input: inputs,
-                self.tf_target: targets,
-            },
-        )
+        with self.tf_graph.as_default():
+            return self.tf_sess.run(
+                [self.tf_acc, self.tf_loss],
+                feed_dict={
+                    self.tf_input: inputs,
+                    self.tf_target: targets,
+                },
+            )
 
     def predict(self, inputs):
         """Predict the probablities for the labels, for a batch of inputs
@@ -139,18 +149,50 @@ class RNNTextGenerator:
         predictions: np.ndarray
             A batch of sequences of probablities.
         """
-        return self.tf_sess.run(
-            self.tf_prob,
-            feed_dict={
-                self.tf_input: inputs,
-            },
-        )
+        with self.tf_graph.as_default():
+            return self.tf_sess.run(
+                self.tf_prob,
+                feed_dict={
+                    self.tf_input: inputs,
+                },
+            )
 
-    def generate(self, start_seq, length):
-        """Generate the text using the encoded starting sequence
-
+    def save(self, path='./model'):
+        """Save the model
         Arguments
         ======================================================================
+        path: string
+            The path to store the model.
+        """
+        with self.tf_graph.as_default():
+            with self.tf_sess.as_default():
+                pickle.dump( 
+                    self.tf_rnn_cell.get_weights(),
+                    open(path + '/' + self.name, 'wb')
+                )
+
+    def restore(self, path='./model'):
+        """Restore the model
+        Arguments
+        ======================================================================
+        path: string
+            The path to store the weights.
+        """
+        with self.tf_graph.as_default():
+            with self.tf_sess.as_default():
+                self.tf_rnn_cell.set_weights(
+                    pickle.load(open(path + '/' + self.name, 'rb'))
+                )
+
+
+    @staticmethod
+    def generate(saved_model, start_seq, length):
+        """Generate the text using a saved model
+        Arguments
+        ======================================================================
+        saved_model: string
+            A path to the saved model.
+
         start_seq: int[]
             The sequence to begin with.
 

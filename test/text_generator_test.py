@@ -44,6 +44,23 @@ class TestTextGenerator(unittest.TestCase):
         print('predictions:', text_gen.predict(inputs))
         print('true targets:', targets)
 
+    def test_save_resotre(self):
+        seq_length = 10
+        vocab_size = 4
+        batch_size = 2
+        text_gen = RNNTextGenerator(
+            seq_length,
+            vocab_size
+        )
+        text_gen.save()
+
+        seq_length = 5
+        text_gen2 = RNNTextGenerator(
+            seq_length,
+            vocab_size
+        )
+        text_gen.restore()
+
     def test_combo(self):
         batch_size = 5
         seq_length = 25
