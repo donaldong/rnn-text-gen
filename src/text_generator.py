@@ -52,10 +52,10 @@ class RNNTextGenerator:
             ]
             """
             self.tf_input = tf.placeholder(
-                tf.int32, shape=(None, seq_length, vocab_size)
+                tf.float32, shape=(None, seq_length, vocab_size)
             )
             self.tf_target = tf.placeholder(
-                tf.int32, shape=(None, seq_length, vocab_size)
+                tf.float32, shape=(None, seq_length, vocab_size)
             )
             with tf.variable_scope(name):
                 self.tf_rnn_cell = rnn_cell(n_neurons)

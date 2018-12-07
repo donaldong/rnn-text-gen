@@ -37,14 +37,14 @@ class Dataset:
             content = open(filename).read()
             text += content
             vocab = vocab.union(set(content))
-        self.vocab = vocab
+        self.vocab_size = len(vocab)
         self.char_to_ix = {c: i for i, c in enumerate(vocab)}
-        self.ix_to_char = np.array(vocab)
+        self.ix_to_char = list(vocab)
         self.text = text
         self.data = np.array([self.char_to_ix[c] for c in text])
 
         dataset = tf.data.Dataset.from_tensor_slices(
-            tf.one_hot(self.data, len(vocab))
+            tf.one_hot(self.data, self.vocab_size)
         )
         dataset = dataset.batch(seq_length + 1, drop_remainder=True)
         self.instances = dataset.map(lambda seq: {
@@ -73,3 +73,40 @@ class Dataset:
                 fewer than batch_size elements.
         """
         return self.instances.batch(batch_size, drop_remainder)
+
+
+    def _to_label(self, index):
+        label = np.zeros(self.vocab_size)
+        label[index] = 1.0
+        return label
+
+    def encode(self, text):
+        """One-hot encode the text
+        Arguments
+        ======================================================================
+            text: string
+                The text to encode.
+
+        Returns
+        ======================================================================
+            seq: int[]
+                The one-hot encoded sequence.
+        """
+        return [self._to_label(self.char_to_ix[c]) for c in text]
+
+    def decode(self, seq):
+        """Decode the one-hot encoded sequence to text format
+        Arguments
+        ======================================================================
+            text: string
+                The text to encode.
+
+        Returns
+        ======================================================================
+            seq: int[]
+                The one-hot encoded sequence.
+        """
+        text = ''
+        for label in seq:
+            text += self.ix_to_char[np.argmax(label)]
+        return text
