@@ -53,7 +53,7 @@ class TestTextGenerator(unittest.TestCase):
         text_gen.restore()
         print(RNNTextGenerator.sample(
             text_gen,
-            inputs[0][-seq_length:],
+            inputs[0][-seq_length:].tolist(),
             seq_length
         ))
 
