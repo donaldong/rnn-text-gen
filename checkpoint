@@ -1,2 +1,0 @@
-model_checkpoint_path: "rnn_text_gen.model"
-all_model_checkpoint_paths: "rnn_text_gen.model"
