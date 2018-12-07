@@ -32,12 +32,10 @@ class TestTextGenerator(unittest.TestCase):
     def test_on_random_data(self):
         seq_length = 10
         vocab_size = 4
-        neurons_per_cell = 10
         batch_size = 2
         text_gen = RNNTextGenerator(
             seq_length,
             vocab_size,
-            neurons_per_cell,
         )
         print('first fit')
         inputs, targets = random_data(batch_size, seq_length, vocab_size)
