@@ -198,7 +198,7 @@ class RNNTextGenerator:
             The one-hot encoded character labels.
         """
         text = [None] * length
-        seq = start_seq.tolist()
+        seq = start_seq
         vocab_size = len(start_seq[0])
         for i in range(length):
             ix = np.random.choice(
