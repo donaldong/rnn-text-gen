@@ -2,7 +2,6 @@
 """
 import tensorflow as tf
 import numpy as np
-import pickle
 
 
 class RNNTextGenerator:
@@ -85,6 +84,7 @@ class RNNTextGenerator:
                     ),
                     tf.float32
                 ))
+                self.tf_saver = tf.train.Saver()
             # Initialize the tf session
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
@@ -165,11 +165,10 @@ class RNNTextGenerator:
             The path to store the model.
         """
         with self.tf_graph.as_default():
-            with self.tf_sess.as_default():
-                pickle.dump( 
-                    self.tf_rnn_cell.get_weights(),
-                    open(path + '/' + self.name, 'wb')
-                )
+            self.tf_saver.save(
+                self.tf_sess,
+                path + '/' + self.name
+            )
 
     def restore(self, path='./model'):
         """Restore the model
@@ -179,11 +178,10 @@ class RNNTextGenerator:
             The path to store the weights.
         """
         with self.tf_graph.as_default():
-            with self.tf_sess.as_default():
-                self.tf_rnn_cell.set_weights(
-                    pickle.load(open(path + '/' + self.name, 'rb'))
-                )
-
+            self.tf_saver.restore(
+                self.tf_sess,
+                path + '/' + self.name
+            )
 
     @staticmethod
     def generate(saved_model, start_seq, length):
