@@ -99,15 +99,14 @@ class RNNTextGenerator:
         targets: np.ndarray
             A batch of target sequences.
         """
-        with self.tf_graph.as_default():
-            self.tf_sess.run(
-                self.tf_train,
-                feed_dict={
-                    self.tf_input: inputs,
-                    self.tf_target: targets,
-                },
-            )
-            return self
+        self.tf_sess.run(
+            self.tf_train,
+            feed_dict={
+                self.tf_input: inputs,
+                self.tf_target: targets,
+            },
+        )
+        return self
 
     def score(self, inputs, targets):
         """Get the score for the batch
@@ -127,14 +126,13 @@ class RNNTextGenerator:
         loss: tf.float32
             The loss on this batch.
         """
-        with self.tf_graph.as_default():
-            return self.tf_sess.run(
-                [self.tf_acc, self.tf_loss],
-                feed_dict={
-                    self.tf_input: inputs,
-                    self.tf_target: targets,
-                },
-            )
+        return self.tf_sess.run(
+            [self.tf_acc, self.tf_loss],
+            feed_dict={
+                self.tf_input: inputs,
+                self.tf_target: targets,
+            },
+        )
 
     def predict(self, inputs):
         """Predict the probablities for the labels, for a batch of inputs
@@ -149,13 +147,12 @@ class RNNTextGenerator:
         predictions: np.ndarray
             A batch of sequences of probablities.
         """
-        with self.tf_graph.as_default():
-            return self.tf_sess.run(
-                self.tf_prob,
-                feed_dict={
-                    self.tf_input: inputs,
-                },
-            )
+        return self.tf_sess.run(
+            self.tf_prob,
+            feed_dict={
+                self.tf_input: inputs,
+            },
+        )
 
     def save(self, path='./model'):
         """Save the model
@@ -164,11 +161,10 @@ class RNNTextGenerator:
         path: string
             The path to store the model.
         """
-        with self.tf_graph.as_default():
-            self.tf_saver.save(
-                self.tf_sess,
-                path + '/' + self.name
-            )
+        self.tf_saver.save(
+            self.tf_sess,
+            path + '/' + self.name
+        )
 
     def restore(self, path='./model'):
         """Restore the model
@@ -177,11 +173,10 @@ class RNNTextGenerator:
         path: string
             The path to store the weights.
         """
-        with self.tf_graph.as_default():
-            self.tf_saver.restore(
-                self.tf_sess,
-                path + '/' + self.name
-            )
+        self.tf_saver.restore(
+            self.tf_sess,
+            path + '/' + self.name
+        )
 
     @staticmethod
     def generate(saved_model, start_seq, length):
