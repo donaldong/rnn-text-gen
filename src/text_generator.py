@@ -59,18 +59,20 @@ class RNNTextGenerator:
                     tf.cast(self.tf_input, tf.float32),
                     dtype=tf.float32,
                 )
-                self.tf_logits = tf.layers.dense(outputs, vocab_size)
+                logits = tf.layers.dense(outputs, vocab_size)
                 self.tf_loss = tf.reduce_mean(
                     tf.nn.softmax_cross_entropy_with_logits(
-                        logits=self.tf_logits,
+                        logits=logits,
                         labels=self.tf_target,
                     )
                 )
                 self.tf_train = optimizer.minimize(self.tf_loss)
-                self.tf_predict = tf.argmax(self.tf_logits, 2)
+                # Normilize the probablities
+                y = tf.math.exp(logits)
+                self.tf_prob = y / tf.reduce_sum(y, 2, keep_dims=True)
                 self.tf_acc = tf.reduce_mean(tf.cast(
                     tf.equal(
-                        self.tf_predict,
+                        tf.argmax(logits, 2),
                         tf.argmax(self.tf_target, 2),
                     ),
                     tf.float32
@@ -79,11 +81,7 @@ class RNNTextGenerator:
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
 
-    def fit(
-            self,
-            inputs,
-            targets,
-    ):
+    def fit(self, inputs, targets):
         """Fit and train the classifier with a batch of inputs and targets
         Arguments
         ======================================================================
@@ -128,11 +126,8 @@ class RNNTextGenerator:
             },
         )
 
-    def predict(
-            self,
-            inputs,
-    ):
-        """Generate the text using the inputs
+    def predict(self, inputs):
+        """Predict the probablities for the labels, for a batch of inputs
         Arguments
         ======================================================================
         inputs: np.ndarray
@@ -142,11 +137,30 @@ class RNNTextGenerator:
         Returns
         ======================================================================
         predictions: np.ndarray
-            A batch of target sequences.
+            A batch of sequences of probablities.
         """
         return self.tf_sess.run(
-            self.tf_predict,
+            self.tf_prob,
             feed_dict={
                 self.tf_input: inputs,
             },
         )
+
+    def generate(self, start_seq, length):
+        """Generate the text using the encoded starting sequence
+
+        Arguments
+        ======================================================================
+        start_seq: int[]
+            The sequence to begin with.
+
+        length: int
+            The length of the generated text.
+
+        Returns
+        ======================================================================
+        text: int[]
+            The one-hot encoded character labels.
+        """
+        text = [None] * length
+        return text
