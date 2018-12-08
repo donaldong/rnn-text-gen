@@ -1,6 +1,7 @@
 """Authors: Alexandria Davis, Donald Dong
 """
 import tensorflow as tf
+import numpy as np
 
 
 class RNNTextGenerator:
@@ -10,8 +11,10 @@ class RNNTextGenerator:
             self,
             seq_length,
             vocab_size,
-            rnn_cell=tf.nn.rnn_cell.BasicRNNCell(100),
-            optimizer=tf.train.AdamOptimizer(),
+            rnn_cell=tf.nn.rnn_cell.BasicRNNCell,
+            n_neurons=100,
+            optimizer=tf.train.AdamOptimizer,
+            learning_rate=0.001,
             name='RNNTextGenerator'
     ):
         """Initialize the text generator and contruct the tf graph
@@ -29,9 +32,10 @@ class RNNTextGenerator:
         name: string
             The name of the net (for graph visualization in tensorboard).
         """
-        graph = tf.Graph()
-        self.tf_sess = tf.Session(graph=graph)
-        with graph.as_default():
+        self.name = name
+        self.tf_graph = tf.Graph()
+        with self.tf_graph.as_default():
+            self.tf_sess = tf.Session()
             # One-hot encoded input and targets
             """placeholder
             Example
@@ -54,36 +58,38 @@ class RNNTextGenerator:
                 tf.int32, shape=(None, seq_length, vocab_size)
             )
             with tf.variable_scope(name):
+                self.tf_rnn_cell = rnn_cell(n_neurons)
                 outputs, _ = tf.nn.dynamic_rnn(
-                    rnn_cell,
+                    self.tf_rnn_cell,
                     tf.cast(self.tf_input, tf.float32),
                     dtype=tf.float32,
                 )
-                self.tf_logits = tf.layers.dense(outputs, vocab_size)
+                logits = tf.layers.dense(outputs, vocab_size)
                 self.tf_loss = tf.reduce_mean(
                     tf.nn.softmax_cross_entropy_with_logits(
-                        logits=self.tf_logits,
+                        logits=logits,
                         labels=self.tf_target,
                     )
                 )
-                self.tf_train = optimizer.minimize(self.tf_loss)
-                self.tf_predict = tf.argmax(self.tf_logits, 2)
+                self.tf_train = optimizer(
+                    learning_rate=learning_rate
+                ).minimize(self.tf_loss)
+                # Normilize the probablities
+                y = tf.math.exp(logits)
+                self.tf_prob = y / tf.reduce_sum(y, 2, keep_dims=True)
                 self.tf_acc = tf.reduce_mean(tf.cast(
                     tf.equal(
-                        self.tf_predict,
+                        tf.argmax(logits, 2),
                         tf.argmax(self.tf_target, 2),
                     ),
                     tf.float32
                 ))
+                self.tf_saver = tf.train.Saver()
             # Initialize the tf session
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
 
-    def fit(
-            self,
-            inputs,
-            targets,
-    ):
+    def fit(self, inputs, targets):
         """Fit and train the classifier with a batch of inputs and targets
         Arguments
         ======================================================================
@@ -128,11 +134,8 @@ class RNNTextGenerator:
             },
         )
 
-    def predict(
-            self,
-            inputs,
-    ):
-        """Generate the text using the inputs
+    def predict(self, inputs):
+        """Predict the probablities for the labels, for a batch of inputs
         Arguments
         ======================================================================
         inputs: np.ndarray
@@ -142,11 +145,70 @@ class RNNTextGenerator:
         Returns
         ======================================================================
         predictions: np.ndarray
-            A batch of target sequences.
+            A batch of sequences of probablities.
         """
         return self.tf_sess.run(
-            self.tf_predict,
+            self.tf_prob,
             feed_dict={
                 self.tf_input: inputs,
             },
         )
+
+    def save(self, path='./model'):
+        """Save the model
+        Arguments
+        ======================================================================
+        path: string
+            The path to store the model.
+        """
+        self.tf_saver.save(
+            self.tf_sess,
+            path + '/' + self.name
+        )
+
+    def restore(self, path='./model'):
+        """Restore the model
+        Arguments
+        ======================================================================
+        path: string
+            The path to store the weights.
+        """
+        self.tf_saver.restore(
+            self.tf_sess,
+            path + '/' + self.name
+        )
+
+    @staticmethod
+    def sample(model, start_seq, length):
+        """Generate the text using a saved model
+        Arguments
+        ======================================================================
+        model: RNNTextGenerator
+            The model to sample from.
+
+        start_seq: int[]
+            The sequence to begin with.
+
+        length: int
+            The length of the generated text.
+
+        Returns
+        ======================================================================
+        text: int[]
+            The one-hot encoded character labels.
+        """
+        text = [None] * length
+        seq = start_seq
+        vocab_size = len(start_seq[0])
+        for i in range(length):
+            ix = np.random.choice(
+                range(vocab_size),
+                # pred[batch 0][last item in the sequence]
+                p=model.predict([seq])[0][-1]
+            )
+            x = np.zeros(vocab_size)
+            x[ix] = 1
+            del seq[0]
+            seq.append(x)
+            text[i] = x
+        return text
