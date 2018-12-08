@@ -3,6 +3,7 @@
 !/data/.keep
 /model/*
 !/model/.keep
+/tf_logs/*
 
 # Ignore all logfiles and tempfiles.
 /log/*

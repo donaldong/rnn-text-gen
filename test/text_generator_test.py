@@ -51,8 +51,13 @@ class TestTextGenerator(unittest.TestCase):
             vocab_size
         )
         text_gen.restore()
-        print(RNNTextGenerator.sample(
-            text_gen,
-            inputs[0][-seq_length:].tolist(),
-            seq_length
-        ))
+
+    def test_log(self):
+        seq_length = 10
+        vocab_size = 4
+        batch_size = 2
+        text_gen = RNNTextGenerator(
+            seq_length,
+            vocab_size,
+            logdir='./tf_logs'
+        )

@@ -15,7 +15,8 @@ class RNNTextGenerator:
             n_neurons=100,
             optimizer=tf.train.AdamOptimizer,
             learning_rate=0.001,
-            name='RNNTextGenerator'
+            name='RNNTextGenerator',
+            logdir=None
     ):
         """Initialize the text generator and contruct the tf graph
         Arguments
@@ -85,6 +86,8 @@ class RNNTextGenerator:
                     tf.float32
                 ))
                 self.tf_saver = tf.train.Saver()
+                if logdir is not None:
+                    self.logger = tf.summary.FileWriter(logdir, self.tf_graph)
             # Initialize the tf session
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
