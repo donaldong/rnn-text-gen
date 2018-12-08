@@ -56,9 +56,3 @@ class TestTextGenerator(unittest.TestCase):
             inputs[0][-seq_length:].tolist(),
             seq_length
         ))
-
-    def test_combo(self):
-        batch_size = 5
-        seq_length = 25
-        filename = 'data/alice.txt'
-        dataset = Dataset([filename], seq_length)

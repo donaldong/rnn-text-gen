@@ -1,12 +1,21 @@
 """author: Donald Dong
 """
 import numpy as np
-import tensorflow as tf
+
+
+class Batch:
+    def __init__(self, seqs):
+        """Create a batch using the sequence
+        Arguments
+        ======================================================================
+            seqs: int[][]
+                The one-hot encoded sequences.
+        """
+        self.inputs = [seq[:-1] for seq in seqs]
+        self.targets = [seq[1:] for seq in seqs]
 
 
 class Dataset:
-    """A wrapper on top of `tf.data.Dataset` to fetch batches
-    """
     def __init__(
             self,
             filenames,
@@ -37,25 +46,13 @@ class Dataset:
             content = open(filename).read()
             text += content
             vocab = vocab.union(set(content))
-        self.vocab = vocab
+        self.seq_length = seq_length
+        self.vocab_size = len(vocab)
         self.char_to_ix = {c: i for i, c in enumerate(vocab)}
-        self.ix_to_char = np.array(vocab)
+        self.ix_to_char = list(vocab)
         self.text = text
         self.data = np.array([self.char_to_ix[c] for c in text])
-
-        dataset = tf.data.Dataset.from_tensor_slices(
-            tf.one_hot(self.data, len(vocab))
-        )
-        dataset = dataset.batch(seq_length + 1, drop_remainder=True)
-        self.instances = dataset.map(lambda seq: {
-            'input': seq[:-1],
-            'target': seq[1:],
-        })
-        if shuffle:
-            self.instances = self.instances.shuffle(
-                buffer_size,
-                reshuffle_each_iteration=True
-            )
+        self.shuffle = shuffle
 
     def batch(
             self,
@@ -72,4 +69,62 @@ class Dataset:
                 Whether the last batch should be dropped in the case its has
                 fewer than batch_size elements.
         """
-        return self.instances.batch(batch_size, drop_remainder)
+        n_seq = len(self.data) // self.seq_length
+        n_batch = n_seq // batch_size
+        seq_ids = np.arange(n_seq)
+        if self.shuffle:
+            np.random.shuffle(seq_ids)
+        i = 0
+        for _ in range(n_batch):
+            seqs = [None] * batch_size
+            for j in range(batch_size):
+                k = seq_ids[i] * self.seq_length
+                seqs[j] = self._create_seq(k, k + self.seq_length + 1)
+                i += 1
+            yield Batch(seqs)
+        if not drop_remainder:
+            seqs = []
+            for j in range(n_seq % batch_size):
+                k = seq_ids[i] * self.seq_length
+                seqs[j] = self._create_seq(k, k + self.seq_length + 1)
+                i += 1
+            yield Batch(seqs)
+
+    def _create_seq(self, i, j):
+        return list(map(self._to_label, self.data[i:j]))
+
+    def _to_label(self, index):
+        label = np.zeros(self.vocab_size)
+        label[index] = 1.0
+        return label
+
+    def encode(self, text):
+        """One-hot encode the text
+        Arguments
+        ======================================================================
+            text: string
+                The text to encode.
+
+        Returns
+        ======================================================================
+            seq: int[]
+                The one-hot encoded sequence.
+        """
+        return [self._to_label(self.char_to_ix[c]) for c in text]
+
+    def decode(self, seq):
+        """Decode the one-hot encoded sequence to text format
+        Arguments
+        ======================================================================
+            text: string
+                The text to encode.
+
+        Returns
+        ======================================================================
+            seq: int[]
+                The one-hot encoded sequence.
+        """
+        text = ''
+        for label in seq:
+            text += self.ix_to_char[np.argmax(label)]
+        return text
