@@ -92,7 +92,7 @@ class RNNTextGenerator:
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
 
-    def fit(self, inputs, targets):
+    def fit(self, dataset, epoch, batch_size):
         """Fit and train the classifier with a batch of inputs and targets
         Arguments
         ======================================================================
@@ -102,13 +102,15 @@ class RNNTextGenerator:
         targets: np.ndarray
             A batch of target sequences.
         """
-        self.tf_sess.run(
-            self.tf_train,
-            feed_dict={
-                self.tf_input: inputs,
-                self.tf_target: targets,
-            },
-        )
+        for _ in range(epoch):
+            for batch in dataset.batch(batch_size):
+                self.tf_sess.run(
+                    self.tf_train,
+                    feed_dict={
+                        self.tf_input: batch.inputs,
+                        self.tf_target: batch.targets,
+                    },
+                )
         return self
 
     def score(self, inputs, targets):
