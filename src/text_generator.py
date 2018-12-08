@@ -27,11 +27,24 @@ class RNNTextGenerator:
         vocab_size: int
             The number of unique characters in the text.
 
-        neurons_per_cell: int
+        rnn_cell: tf.nn.rnn_cell.*
+            A rnn cell from tensorflow.
+
+        n_neurons: int
             The number of neurons in each RNN cell.
+
+        optimizer: tf.train.*Optimizer
+            An optimizer from tensorflow.
+
+        learning_rate:
+            A Tensor or a floating point value. The learning rate of the
+            optimizer.
 
         name: string
             The name of the net (for graph visualization in tensorboard).
+
+        logdir: string
+            The path to save the tensorflow summary.
         """
         self.name = name
         self.tf_graph = tf.Graph()
@@ -67,7 +80,7 @@ class RNNTextGenerator:
                 )
                 logits = tf.layers.dense(outputs, vocab_size)
                 self.tf_loss = tf.reduce_mean(
-                    tf.nn.softmax_cross_entropy_with_logits(
+                    tf.nn.softmax_cross_entropy_with_logits_v2(
                         logits=logits,
                         labels=self.tf_target,
                     )
@@ -75,9 +88,7 @@ class RNNTextGenerator:
                 self.tf_train = optimizer(
                     learning_rate=learning_rate
                 ).minimize(self.tf_loss)
-                # Normilize the probablities
-                y = tf.math.exp(logits)
-                self.tf_prob = y / tf.reduce_sum(y, 2, keep_dims=True)
+                self.tf_prob = tf.nn.softmax(logits)
                 self.tf_acc = tf.reduce_mean(tf.cast(
                     tf.equal(
                         tf.argmax(logits, 2),
@@ -92,7 +103,7 @@ class RNNTextGenerator:
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
 
-    def fit(self, inputs, targets):
+    def fit(self, dataset, epoch, batch_size):
         """Fit and train the classifier with a batch of inputs and targets
         Arguments
         ======================================================================
@@ -102,13 +113,15 @@ class RNNTextGenerator:
         targets: np.ndarray
             A batch of target sequences.
         """
-        self.tf_sess.run(
-            self.tf_train,
-            feed_dict={
-                self.tf_input: inputs,
-                self.tf_target: targets,
-            },
-        )
+        for _ in range(epoch):
+            for batch in dataset.batch(batch_size):
+                self.tf_sess.run(
+                    self.tf_train,
+                    feed_dict={
+                        self.tf_input: batch.inputs,
+                        self.tf_target: batch.targets,
+                    },
+                )
         return self
 
     def score(self, inputs, targets):
@@ -174,7 +187,7 @@ class RNNTextGenerator:
         Arguments
         ======================================================================
         path: string
-            The path to store the weights.
+            The path where the model is saved.
         """
         self.tf_saver.restore(
             self.tf_sess,
@@ -192,16 +205,16 @@ class RNNTextGenerator:
         dataset: Dataset
             The dataset to encode and decode the labels.
 
-        start_seq: int[]
-            The sequence to begin with.
+        start_seq: string
+            The character sequence to begin with.
 
         length: int
             The length of the generated text.
 
         Returns
         ======================================================================
-        text: int[]
-            The one-hot encoded character labels.
+        text: string
+            The generated text.
         """
         text = [None] * length
         seq = dataset.encode(start_seq)
