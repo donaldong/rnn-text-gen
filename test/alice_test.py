@@ -18,9 +18,11 @@ class TestAlice(unittest.TestCase):
         model = RNNTextGenerator(
             seq_length,
             dataset.vocab_size,
-            learning_rate=learning_rate
+            learning_rate=learning_rate,
+            epoch=epoch,
+            batch_size=batch_size,
         )
-        model.fit(dataset, epoch, batch_size)
+        model.fit(dataset)
         model.save()
         start_seq = 'hello'
         model = RNNTextGenerator(
