@@ -3,7 +3,6 @@
 """
 
 import unittest
-import numpy as np
 from src.text_generator import RNNTextGenerator
 from src.dataset import Dataset
 
@@ -20,9 +19,7 @@ class TestAlice(unittest.TestCase):
             dataset.vocab_size,
             learning_rate=learning_rate
         )
-        for _ in range(epoch):
-            for batch in dataset.batch(batch_size):
-                model.fit(batch.inputs, batch.targets)
+        model.fit(dataset, epoch, batch_size)
         model.save()
         start_seq = 'hello'
         model = RNNTextGenerator(
