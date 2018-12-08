@@ -8,8 +8,8 @@ class Batch:
         """Create a batch using the sequence
         Arguments
         ======================================================================
-            seqs: int[][]
-                The one-hot encoded sequences.
+        seqs: int[][][]
+            The one-hot encoded sequences.
         """
         self.inputs = [seq[:-1] for seq in seqs]
         self.targets = [seq[1:] for seq in seqs]
@@ -21,24 +21,19 @@ class Dataset:
             filenames,
             seq_length,
             shuffle=True,
-            buffer_size=10000,
     ):
         """Creates a dataset
         Arguments
         ======================================================================
-            filenames: string
-                Path to one or more plain text files.
-                The file contents are concatenated in the given order.
+        filenames: string
+            Path to one or more plain text files.
+            The file contents are concatenated in the given order.
 
-            seq_length: int
-                The length of the text sequence.
+        seq_length: int
+            The length of the text sequence.
 
-            shuffle: boolean
-                Whether to shuffle the sequences for the batches.
-
-            buffer_size: int
-                 The number of elements from this dataset from which the new
-                 dataset will sample.
+        shuffle: boolean
+            Whether to shuffle the sequences for the batches.
         """
         text = ''
         vocab = set()
@@ -62,12 +57,12 @@ class Dataset:
         """Batch the instances
         Arguments
         ======================================================================
-            batch_size: int
-                The number of instances in a single batch.
+        batch_size: int
+            The number of instances in a single batch.
 
-            drop_remainder: boolean
-                Whether the last batch should be dropped in the case its has
-                fewer than batch_size elements.
+        drop_remainder: boolean
+            Whether the last batch should be dropped in the case its has
+            fewer than batch_size elements.
         """
         n_seq = len(self.data) // self.seq_length
         n_batch = n_seq // batch_size
@@ -90,25 +85,17 @@ class Dataset:
                 i += 1
             yield Batch(seqs)
 
-    def _create_seq(self, i, j):
-        return list(map(self._to_label, self.data[i:j]))
-
-    def _to_label(self, index):
-        label = np.zeros(self.vocab_size)
-        label[index] = 1.0
-        return label
-
     def encode(self, text):
         """One-hot encode the text
         Arguments
         ======================================================================
-            text: string
-                The text to encode.
+        text: string
+            The text to encode.
 
         Returns
         ======================================================================
-            seq: int[]
-                The one-hot encoded sequence.
+        seq: int[][]
+            The one-hot encoded sequence.
         """
         return [self._to_label(self.char_to_ix[c]) for c in text]
 
@@ -116,15 +103,23 @@ class Dataset:
         """Decode the one-hot encoded sequence to text format
         Arguments
         ======================================================================
-            text: string
-                The text to encode.
+        seq: int[][]
+            The one-hot encoded sequence.
 
         Returns
         ======================================================================
-            seq: int[]
-                The one-hot encoded sequence.
+        text: string
+            The decoded text.
         """
         text = ''
         for label in seq:
             text += self.ix_to_char[np.argmax(label)]
         return text
+
+    def _create_seq(self, i, j):
+        return list(map(self._to_label, self.data[i:j]))
+
+    def _to_label(self, index):
+        label = np.zeros(self.vocab_size)
+        label[index] = 1.0
+        return label

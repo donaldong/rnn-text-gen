@@ -27,11 +27,24 @@ class RNNTextGenerator:
         vocab_size: int
             The number of unique characters in the text.
 
-        neurons_per_cell: int
+        rnn_cell: tf.nn.rnn_cell.*
+            A rnn cell from tensorflow.
+
+        n_neurons: int
             The number of neurons in each RNN cell.
+
+        optimizer: tf.train.*Optimizer
+            An optimizer from tensorflow.
+
+        learning_rate:
+            A Tensor or a floating point value. The learning rate of the
+            optimizer.
 
         name: string
             The name of the net (for graph visualization in tensorboard).
+
+        logdir: string
+            The path to save the tensorflow summary.
         """
         self.name = name
         self.tf_graph = tf.Graph()
@@ -176,7 +189,7 @@ class RNNTextGenerator:
         Arguments
         ======================================================================
         path: string
-            The path to store the weights.
+            The path where the model is saved.
         """
         self.tf_saver.restore(
             self.tf_sess,
@@ -194,16 +207,16 @@ class RNNTextGenerator:
         dataset: Dataset
             The dataset to encode and decode the labels.
 
-        start_seq: int[]
-            The sequence to begin with.
+        start_seq: string
+            The character sequence to begin with.
 
         length: int
             The length of the generated text.
 
         Returns
         ======================================================================
-        text: int[]
-            The one-hot encoded character labels.
+        text: string
+            The generated text.
         """
         text = [None] * length
         seq = dataset.encode(start_seq)
