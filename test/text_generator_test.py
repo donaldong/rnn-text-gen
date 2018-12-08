@@ -3,10 +3,7 @@
 
 import unittest
 from src.text_generator import RNNTextGenerator
-
-
-class TestTextGenerator(unittest.TestCase):
-    def test_save_restore(self):
+        print("---------------Testing text generator with randomly generated data-------------")
         seq_length = 10
         vocab_size = 4
         text_gen = RNNTextGenerator(
@@ -23,6 +20,7 @@ class TestTextGenerator(unittest.TestCase):
         text_gen.restore()
 
     def test_log(self):
+        print("-------------Testing logs---------------")
         seq_length = 10
         vocab_size = 4
         text_gen = RNNTextGenerator(

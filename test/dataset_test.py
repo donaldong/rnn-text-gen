@@ -7,6 +7,7 @@ from src.dataset import Dataset
 
 class TestDataset(unittest.TestCase):
     def test_batch_a_seq(self):
+        print("-----------Testing Dataset generator-----------")
         batch_size = 5
         seq_length = 100
         filename = 'data/alice.txt'
