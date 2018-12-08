@@ -1,6 +1,4 @@
 # Ignore all data files
-/data/*
-!/data/.keep
 /model/*
 !/model/.keep
 /tf_logs/*
