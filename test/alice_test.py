@@ -10,6 +10,7 @@ from src.dataset import Dataset
 
 class TestAlice(unittest.TestCase):
     def test_alice(self):
+        print("----------------Testing dataset Alice---------------")
         seq_length = 25
         batch_size = 25
         learning_rate = 0.01

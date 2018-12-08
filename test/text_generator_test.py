@@ -8,6 +8,7 @@ from src.dataset import Dataset
 
 
 def random_label(vocab_size):
+    print("-------- Generating random labels --------- ")
     """randomly assign a label
     """
     label = np.random.randint(vocab_size)
@@ -19,6 +20,7 @@ def random_label(vocab_size):
 def random_data(batch_size, seq_length, vocab_size):
     """generate random data
     """
+    print("-------------Generating random data----------------")
     inputs = []
     targets = []
     for _ in range(batch_size):
@@ -30,6 +32,7 @@ def random_data(batch_size, seq_length, vocab_size):
 
 class TestTextGenerator(unittest.TestCase):
     def test_on_random_data(self):
+        print("---------------Testing text generator with randomly generated data-------------")
         seq_length = 10
         vocab_size = 4
         batch_size = 2
@@ -53,6 +56,7 @@ class TestTextGenerator(unittest.TestCase):
         text_gen.restore()
 
     def test_log(self):
+        print("-------------Testing logs---------------")
         seq_length = 10
         vocab_size = 4
         batch_size = 2
