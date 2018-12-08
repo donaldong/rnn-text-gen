@@ -80,7 +80,7 @@ class RNNTextGenerator:
                 )
                 logits = tf.layers.dense(outputs, vocab_size)
                 self.tf_loss = tf.reduce_mean(
-                    tf.nn.softmax_cross_entropy_with_logits(
+                    tf.nn.softmax_cross_entropy_with_logits_v2(
                         logits=logits,
                         labels=self.tf_target,
                     )
@@ -88,9 +88,7 @@ class RNNTextGenerator:
                 self.tf_train = optimizer(
                     learning_rate=learning_rate
                 ).minimize(self.tf_loss)
-                # Normilize the probablities
-                y = tf.math.exp(logits)
-                self.tf_prob = y / tf.reduce_sum(y, 2, keep_dims=True)
+                self.tf_prob = tf.nn.softmax(logits)
                 self.tf_acc = tf.reduce_mean(tf.cast(
                     tf.equal(
                         tf.argmax(logits, 2),

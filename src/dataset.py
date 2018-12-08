@@ -38,9 +38,10 @@ class Dataset:
         text = ''
         vocab = set()
         for filename in filenames:
-            content = open(filename).read()
-            text += content
-            vocab = vocab.union(set(content))
+            with open(filename) as file:
+                content = file.read()
+                text += content
+                vocab = vocab.union(set(content))
         self.seq_length = seq_length
         self.vocab_size = len(vocab)
         self.char_to_ix = {c: i for i, c in enumerate(vocab)}
