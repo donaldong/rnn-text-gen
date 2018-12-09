@@ -2,6 +2,7 @@
 """
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 
 class RNNTextGenerator:
@@ -18,7 +19,7 @@ class RNNTextGenerator:
             epoch=5,
             batch_size=25,
             name='RNNTextGenerator',
-            logdir=None
+            logdir=None,
     ):
         """Initialize the text generator and contruct the tf graph
         Arguments
@@ -113,13 +114,18 @@ class RNNTextGenerator:
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
 
-    def fit(self, dataset):
+    def fit(self, dataset, save_scores):
         """Fit and train the classifier with a batch of inputs and targets
         Arguments
         ======================================================================
         dataset: Dataset
             The text dataset.
+
+        save_scores: boolean
+            Whether to save the scores for the fit
         """
+        accs = []
+        losses = []
         for _ in range(self.epoch):
             for batch in dataset.batch(self.batch_size):
                 self.tf_sess.run(
@@ -129,7 +135,15 @@ class RNNTextGenerator:
                         self.tf_target: batch.targets,
                     },
                 )
-        return self
+                if save_scores:
+                    acc, loss = self._score(batch.inputs, batch.targets)
+                    accs.append(acc)
+                    losses.append(loss)
+        if save_scores:
+            return pd.DataFrame({
+                'accuracy': accs,
+                'loss': losses,
+            })
 
     def score(self, dataset):
         """Get the score for the batch
@@ -146,13 +160,7 @@ class RNNTextGenerator:
             The loss on this batch.
         """
         batch = np.random.choice(list(dataset.batch(self.batch_size)))
-        return self.tf_sess.run(
-            [self.tf_acc, self.tf_loss],
-            feed_dict={
-                self.tf_input: batch.inputs,
-                self.tf_target: batch.targets,
-            },
-        )
+        return self._score(batch.inputs, batch.targets)
 
     def predict(self, inputs):
         """Predict the probablities for the labels, for a batch of inputs
@@ -234,3 +242,12 @@ class RNNTextGenerator:
             seq.append(x)
             text[i] = x
         return dataset.decode(text)
+
+    def _score(self, inputs, targets):
+        return self.tf_sess.run(
+            [self.tf_acc, self.tf_loss],
+            feed_dict={
+                self.tf_input: inputs,
+                self.tf_target: targets,
+            },
+        )

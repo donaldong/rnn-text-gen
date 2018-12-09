@@ -22,7 +22,7 @@ class TestAlice(unittest.TestCase):
             epoch=epoch,
             batch_size=batch_size,
         )
-        model.fit(dataset)
+        print(model.fit(dataset, save_scores=True))
         model.save()
         start_seq = 'hello'
         model = RNNTextGenerator(
