@@ -114,7 +114,7 @@ class RNNTextGenerator:
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
 
-    def fit(self, dataset, save_scores):
+    def fit(self, dataset, save_scores=False):
         """Fit and train the classifier with a batch of inputs and targets
         Arguments
         ======================================================================
