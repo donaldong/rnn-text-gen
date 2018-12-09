@@ -15,6 +15,8 @@ class RNNTextGenerator:
             n_neurons=100,
             optimizer=tf.train.AdamOptimizer,
             learning_rate=0.001,
+            epoch=5,
+            batch_size=25,
             name='RNNTextGenerator',
             logdir=None
     ):
@@ -36,6 +38,12 @@ class RNNTextGenerator:
         optimizer: tf.train.*Optimizer
             An optimizer from tensorflow.
 
+        epoch: int
+            The number of times to go through the dataset.
+
+        batch_size: int
+            The number of sequences in a batch.
+
         learning_rate:
             A Tensor or a floating point value. The learning rate of the
             optimizer.
@@ -46,6 +54,8 @@ class RNNTextGenerator:
         logdir: string
             The path to save the tensorflow summary.
         """
+        self.batch_size = batch_size
+        self.epoch = epoch
         self.name = name
         self.tf_graph = tf.Graph()
         with self.tf_graph.as_default():
@@ -103,18 +113,15 @@ class RNNTextGenerator:
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
 
-    def fit(self, dataset, epoch, batch_size):
+    def fit(self, dataset):
         """Fit and train the classifier with a batch of inputs and targets
         Arguments
         ======================================================================
-        inputs: np.ndarray
-            A batch of input sequences.
-
-        targets: np.ndarray
-            A batch of target sequences.
+        dataset: Dataset
+            The text dataset.
         """
-        for _ in range(epoch):
-            for batch in dataset.batch(batch_size):
+        for _ in range(self.epoch):
+            for batch in dataset.batch(self.batch_size):
                 self.tf_sess.run(
                     self.tf_train,
                     feed_dict={
@@ -124,17 +131,13 @@ class RNNTextGenerator:
                 )
         return self
 
-    def score(self, inputs, targets):
+    def score(self, dataset):
         """Get the score for the batch
         Arguments
         ======================================================================
-        inputs: np.ndarray
-            A batch of input sequences.
+        dataset: Dataset
+            The text dataset.
 
-        targets: np.ndarray
-            A batch of target sequences.
-
-        Returns
         ======================================================================
         accuracy: tf.float32
             The accuracy on this batch.
@@ -142,11 +145,12 @@ class RNNTextGenerator:
         loss: tf.float32
             The loss on this batch.
         """
+        batch = np.random.choice(list(dataset.batch(self.batch_size)))
         return self.tf_sess.run(
             [self.tf_acc, self.tf_loss],
             feed_dict={
-                self.tf_input: inputs,
-                self.tf_target: targets,
+                self.tf_input: batch.inputs,
+                self.tf_target: batch.targets,
             },
         )
 
