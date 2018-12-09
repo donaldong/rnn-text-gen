@@ -113,6 +113,12 @@ class RNNTextGenerator:
             # Initialize the tf session
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
+            self._str_repr = "[{}] {}({}), {}({}), ".format(
+                self.name, rnn_cell.__name__, n_neurons,
+                optimizer.__name__, learning_rate
+            ) + "epoch({}), batch_size({})".format(
+                epoch, batch_size
+            )
 
     def fit(self, dataset, save_scores=False):
         """Fit and train the classifier with a batch of inputs and targets
@@ -251,3 +257,9 @@ class RNNTextGenerator:
                 self.tf_target: targets,
             },
         )
+
+    def __repr__(self):
+        return self._str_repr
+
+    def __str__(self):
+        return self._str_repr
