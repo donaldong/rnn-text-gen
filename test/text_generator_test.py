@@ -8,9 +8,11 @@ from src.text_generator import RNNTextGenerator
 def test_save_restore(l1, l2, vocab_size):
     text_gen = RNNTextGenerator(l1, vocab_size)
     text_gen.save()
+    print(text_gen)
 
     text_gen = RNNTextGenerator(l2, vocab_size)
     text_gen.restore()
+    print(text_gen)
 
 
 def test_log(seq_length, vocab_size, logdir):
