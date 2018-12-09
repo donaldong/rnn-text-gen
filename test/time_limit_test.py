@@ -3,9 +3,12 @@
 
 import unittest
 from src.time_limit import time_limit
+from datetime import datetime
 
 
 class TestTimeLimit(unittest.TestCase):
     def test(self):
-        for _ in time_limit(seconds=2):
-            print('test')
+        print(datetime.now())
+        for _ in time_limit(minutes=2):
+            pass
+        print(datetime.now())

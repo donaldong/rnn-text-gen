@@ -20,6 +20,8 @@ class ModelSelector:
         self.dataset = dataset
         self.params = params
         self.models = []
+        self.acc = []
+        self.loss = []
 
     def search(self):
         """Perform a randomized search
@@ -34,20 +36,28 @@ class ModelSelector:
         )
         model.fit(self.dataset)
         acc, loss = model.score(self.dataset)
-        self.models.append(pd.DataFrame({
-            'model': [model],
-            'accuracy': [acc],
-            'loss': [loss],
-        }))
+        self.models.append(model)
+        self.acc.append(acc)
+        self.loss.append(loss)
         return model
 
     def as_df(self):
         """Save as a pandas Dataframe
         """
-        return pd.concat(
-            self.models,
-            ignore_index=True,
-        ).sort_values(
+        return pd.DataFrame({
+            'model': self.models,
+            'accuracy': self.acc,
+            'loss': self.loss,
+        }).sort_values(
             by=['accuracy'],
             ascending=False,
         )
+
+    def best_model(self):
+        """Get the best model
+        Returns
+        ======================================================================
+        model: RNNTextGenerator
+            The model with highest accuracy.
+        """
+        return self.as_df().head(1)['model'].values[0]

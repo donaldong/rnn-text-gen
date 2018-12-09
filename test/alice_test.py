@@ -21,15 +21,8 @@ def test_alice(filename, start_seq):
         batch_size=batch_size,
     )
     scores = model.fit(dataset, save_scores=True)
-    model.save()
-    model = RNNTextGenerator(
-        len(start_seq),
-        dataset.vocab_size,
-    )
-    model.restore()
-    print('>>>>>\n{}'.format(start_seq))
-    print(RNNTextGenerator.sample(
-        model,
+    print('>>>>>>\n{}'.format(start_seq))
+    print(model.generate(
         dataset,
         start_seq,
         50
