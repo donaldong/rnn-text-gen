@@ -119,6 +119,21 @@ class RNNTextGenerator:
             ) + "epoch({}), batch_size({})".format(
                 epoch, batch_size
             )
+            self._params = {
+                'vocab_size': vocab_size,
+                'rnn_cell': rnn_cell,
+                'n_neurons': n_neurons,
+                'optimizer': optimizer,
+                'learning_rate': learning_rate,
+                'epoch': 5,
+                'batch_size': 25,
+                'name': name,
+            }
+
+    def get_params(self):
+        """Return the params
+        """
+        return self._params
 
     def fit(self, dataset, save_scores=False):
         """Fit and train the classifier with a batch of inputs and targets
@@ -212,8 +227,7 @@ class RNNTextGenerator:
             path + '/' + self.name
         )
 
-    @staticmethod
-    def sample(model, dataset, start_seq, length):
+    def sample(self, dataset, start_seq, length):
         """Generate the text using a saved model
         Arguments
         ======================================================================
@@ -240,7 +254,7 @@ class RNNTextGenerator:
             ix = np.random.choice(
                 range(dataset.vocab_size),
                 # pred[batch 0][last item in the sequence]
-                p=model.predict([seq])[0][-1]
+                p=self.predict([seq])[0][-1]
             )
             x = np.zeros(dataset.vocab_size)
             x[ix] = 1
@@ -248,6 +262,39 @@ class RNNTextGenerator:
             seq.append(x)
             text[i] = x
         return dataset.decode(text)
+
+    def generate(self, dataset, start_seq, length):
+        """Generate the text using a base model
+        Arguments
+        ======================================================================
+        model: RNNTextGenerator
+            The base model.
+
+        dataset: Dataset
+            The dataset to encode and decode the labels.
+
+        start_seq: string
+            The character sequence to begin with.
+
+        length: int
+            The length of the generated text.
+
+        Returns
+        ======================================================================
+        text: string
+            The generated text.
+        """
+        self.save()
+        model = RNNTextGenerator(
+            len(start_seq),
+            **self._params
+        )
+        model.restore()
+        return model.sample(
+            dataset,
+            start_seq,
+            length
+        )
 
     def _score(self, inputs, targets):
         return self.tf_sess.run(

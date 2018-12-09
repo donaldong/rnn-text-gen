@@ -12,8 +12,12 @@ def time_limit(
 ):
     start_time = datetime.now()
     delta = timedelta(
-        days, seconds, milliseconds,
-        minutes, hours, weeks
+        days=days,
+        seconds=seconds,
+        milliseconds=milliseconds,
+        minutes=minutes,
+        hours=hours,
+        weeks=weeks
     )
     while delta > datetime.now() - start_time:
         yield
