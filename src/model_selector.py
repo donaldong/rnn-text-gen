@@ -8,7 +8,6 @@ class ModelSelector:
             dataset,
             params,
     ):
-
         """Initialize the text generator and contruct the tf graph
         Arguments
         ======================================================================
@@ -43,9 +42,12 @@ class ModelSelector:
         return model
 
     def as_df(self):
+        """Save as a pandas Dataframe
+        """
         return pd.concat(
-            self.models
+            self.models,
+            ignore_index=True,
         ).sort_values(
             by=['accuracy'],
-            ascending=False
+            ascending=False,
         )

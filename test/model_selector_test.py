@@ -9,27 +9,28 @@ import numpy as np
 import tensorflow as tf
 
 
+def test_model_selector(dataset, params, n):
+    selector = ModelSelector(dataset, params)
+    for _ in range(n):
+        selector.search()
+    return selector.as_df()
+
+
 class TestModelSelector(unittest.TestCase):
     def test(self):
         seq_length = 25
         filename = './data/alice.txt'
         dataset = Dataset([filename], seq_length)
-        selector = ModelSelector(
-            dataset,
-            {
-                'rnn_cell': [
-                    tf.contrib.rnn.BasicRNNCell
-                ],
-                'n_neurons': np.arange(1, 1000),
-                'optimizer': [
-                    tf.train.AdamOptimizer,
-                ],
-                'learning_rate': np.linspace(0, 1, 10000, endpoint=False),
-                'epoch': np.arange(5, 100),
-                'batch_size': np.arange(25, 100),
-            }
-        )
-        selector.search()
-        selector.search()
-        selector.search()
-        print(selector.as_df())
+        params = {
+            'rnn_cell': [
+                tf.contrib.rnn.BasicRNNCell
+            ],
+            'n_neurons': np.arange(1, 1000),
+            'optimizer': [
+                tf.train.AdamOptimizer,
+            ],
+            'learning_rate': np.linspace(0, 1, 10000, endpoint=False),
+            'epoch': np.arange(5, 100),
+            'batch_size': np.arange(25, 100),
+        }
+        print(test_model_selector(dataset, params, 3))
