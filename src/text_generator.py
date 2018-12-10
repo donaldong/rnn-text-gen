@@ -14,6 +14,7 @@ class RNNTextGenerator:
             vocab_size,
             rnn_cell=tf.nn.rnn_cell.BasicRNNCell,
             n_neurons=100,
+            activation=None,
             optimizer=tf.train.AdamOptimizer,
             learning_rate=0.001,
             epoch=5,
@@ -35,6 +36,9 @@ class RNNTextGenerator:
 
         n_neurons: int
             The number of neurons in each RNN cell.
+
+        activation: activation ops
+            An activation function for the rnn cell.
 
         optimizer: tf.train.*Optimizer
             An optimizer from tensorflow.
@@ -83,7 +87,10 @@ class RNNTextGenerator:
                 tf.float32, shape=(None, seq_length, vocab_size)
             )
             with tf.variable_scope(name):
-                self.tf_rnn_cell = rnn_cell(n_neurons)
+                self.tf_rnn_cell = rnn_cell(
+                    n_neurons,
+                    activation=activation,
+                )
                 outputs, _ = tf.nn.dynamic_rnn(
                     self.tf_rnn_cell,
                     tf.cast(self.tf_input, tf.float32),
@@ -113,16 +120,11 @@ class RNNTextGenerator:
             # Initialize the tf session
             self.tf_sess.run(tf.global_variables_initializer())
             self.tf_sess.run(tf.local_variables_initializer())
-            self._str_repr = "[{}] {}({}), {}({}), ".format(
-                self.name, rnn_cell.__name__, n_neurons,
-                optimizer.__name__, learning_rate
-            ) + "epoch({}), batch_size({})".format(
-                epoch, batch_size
-            )
             self._params = {
                 'vocab_size': vocab_size,
                 'rnn_cell': rnn_cell,
                 'n_neurons': n_neurons,
+                'activation': activation,
                 'optimizer': optimizer,
                 'learning_rate': learning_rate,
                 'epoch': 5,
@@ -306,7 +308,7 @@ class RNNTextGenerator:
         )
 
     def __repr__(self):
-        return self._str_repr
+        return repr(self._params)
 
     def __str__(self):
-        return self._str_repr
+        return str(self._params)
