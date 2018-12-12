@@ -15,7 +15,6 @@ class RNNTextGenerator:
             rnn_cell=tf.nn.rnn_cell.BasicRNNCell,
             n_neurons=100,
             activation=None,
-            output_keep_prob=1.0,
             optimizer=tf.train.AdamOptimizer,
             learning_rate=0.001,
             epoch=5,
@@ -40,10 +39,6 @@ class RNNTextGenerator:
 
         activation: activation ops
             An activation function for the rnn cell.
-
-        output_keep_prob: float
-            Unit Tensor or float between 0 and 1, output keep probability; if
-            it is constant and 1, no output dropout will be added.
 
         optimizer: tf.train.*Optimizer
             An optimizer from tensorflow.
@@ -92,12 +87,9 @@ class RNNTextGenerator:
                 tf.float32, shape=(None, seq_length, vocab_size)
             )
             with tf.variable_scope(name):
-                self.tf_rnn_cell = tf.nn.rnn_cell.DropoutWrapper(
-                    rnn_cell(
-                        n_neurons,
-                        activation=activation,
-                    ),
-                    output_keep_prob=output_keep_prob,
+                self.tf_rnn_cell = rnn_cell(
+                    n_neurons,
+                    activation=activation,
                 )
                 outputs, _ = tf.nn.dynamic_rnn(
                     self.tf_rnn_cell,
@@ -133,7 +125,6 @@ class RNNTextGenerator:
                 'rnn_cell': rnn_cell,
                 'n_neurons': n_neurons,
                 'activation': activation,
-                'output_keep_prob': output_keep_prob,
                 'optimizer': optimizer,
                 'learning_rate': learning_rate,
                 'epoch': 5,
