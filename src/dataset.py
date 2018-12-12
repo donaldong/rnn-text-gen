@@ -75,16 +75,29 @@ class Dataset:
             seqs = [None] * batch_size
             for j in range(batch_size):
                 k = seq_ids[i] * self.seq_length
-                seqs[j] = self._create_seq(k, k + self.seq_length + 1)
+                seqs[j] = self._create_seq(k)
                 i += 1
             yield Batch(seqs)
         if not drop_remainder:
             seqs = []
             for j in range(n_seq % batch_size):
                 k = seq_ids[i] * self.seq_length
-                seqs[j] = self._create_seq(k, k + self.seq_length + 1)
+                seqs[j] = self._create_seq(k)
                 i += 1
             yield Batch(seqs)
+
+    def sample(self, batch_size):
+        """Radomly select some sequences with replacement
+        Arguments
+        ======================================================================
+        batch_size: int
+            The number of instances in a single batch.
+        """
+        n = len(self.text) - self.seq_length
+        return Batch([
+            self._create_seq(np.random.randint(n))
+            for _ in range(batch_size)
+        ])
 
     def encode(self, text):
         """One-hot encode the text
@@ -117,7 +130,8 @@ class Dataset:
             text += self.ix_to_char[np.argmax(label)]
         return text
 
-    def _create_seq(self, i, j):
+    def _create_seq(self, i):
+        j = i + self.seq_length + 1
         return list(map(self._to_label, self.data[i:j]))
 
     def _to_label(self, index):

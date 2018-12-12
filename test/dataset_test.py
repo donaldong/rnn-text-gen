@@ -19,6 +19,9 @@ def test_batch(filename, batch_size, seq_length):
                 # One-hot encoded
                 assert sum(batch.inputs[i][j]) == 1
 
+def test_sample(filename, batch_size, seq_length):
+    dataset = Dataset([filename], seq_length)
+    print(dataset.sample(batch_size))
 
 class TestDataset(unittest.TestCase):
     def test(self):
@@ -27,3 +30,4 @@ class TestDataset(unittest.TestCase):
         seq_length = 100
         filename = 'data/alice.txt'
         test_batch(filename, batch_size, seq_length)
+        test_sample(filename, batch_size, seq_length)

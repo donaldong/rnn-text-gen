@@ -127,8 +127,8 @@ class RNNTextGenerator:
                 'activation': activation,
                 'optimizer': optimizer,
                 'learning_rate': learning_rate,
-                'epoch': 5,
-                'batch_size': 25,
+                'epoch': epoch,
+                'batch_size': batch_size,
                 'name': name,
             }
 
@@ -168,12 +168,15 @@ class RNNTextGenerator:
                 'loss': losses,
             })
 
-    def score(self, dataset):
+    def score(self, dataset, batch_size=None, n_samples=5):
         """Get the score for the batch
         Arguments
         ======================================================================
         dataset: Dataset
             The text dataset.
+
+        n_samples: int
+            The number of times to sample from the dataset for testing.
 
         ======================================================================
         accuracy: tf.float32
@@ -182,8 +185,14 @@ class RNNTextGenerator:
         loss: tf.float32
             The loss on this batch.
         """
-        batch = np.random.choice(list(dataset.batch(self.batch_size)))
-        return self._score(batch.inputs, batch.targets)
+        if batch_size is None:
+            batch_size = self.batch_size
+        acc = [None] * n_samples
+        loss = [None] * n_samples
+        for i in range(n_samples):
+            batch = dataset.sample(batch_size)
+            acc[i], loss[i] = self._score(batch.inputs, batch.targets)
+        return np.mean(acc), np.mean(loss)
 
     def predict(self, inputs):
         """Predict the probablities for the labels, for a batch of inputs

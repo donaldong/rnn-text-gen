@@ -30,7 +30,7 @@ class TestModelSelector(unittest.TestCase):
                 tf.train.AdamOptimizer,
             ],
             'learning_rate': np.linspace(0, 1, 10000, endpoint=False),
-            'epoch': np.arange(5, 100),
+            'epoch': np.arange(1, 6),
             'batch_size': np.arange(25, 100),
         }
         print(test_model_selector(dataset, params, 3))

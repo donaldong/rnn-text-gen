@@ -7,6 +7,7 @@ class ModelSelector:
             self,
             dataset,
             params,
+            n_samples=5,
     ):
         """Initialize the text generator and contruct the tf graph
         Arguments
@@ -16,12 +17,16 @@ class ModelSelector:
 
         params: dict
             The entire search space.
+
+        n_samples: int
+            The number of times to sample from the dataset for testing.
         """
         self.dataset = dataset
         self.params = params
         self.models = []
         self.acc = []
         self.loss = []
+        self.n_samples = n_samples
 
     def search(self):
         """Perform a randomized search
@@ -35,7 +40,10 @@ class ModelSelector:
             **selected
         )
         model.fit(self.dataset)
-        acc, loss = model.score(self.dataset)
+        acc, loss = model.score(
+            self.dataset,
+            n_samples=self.n_samples
+        )
         self.models.append(model)
         self.acc.append(acc)
         self.loss.append(loss)
