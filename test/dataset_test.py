@@ -43,6 +43,10 @@ def test_encode(filename, seq_length, text):
         assert sum(label) == 1
         assert len(label) == dataset.vocab_size
 
+def test_decode(filename, seq_length, text):
+    dataset = Dataset([filename], seq_length)
+    assert dataset.decode(dataset.encode(text)) == text
+
 class TestDataset(unittest.TestCase):
     def test(self):
         print("-----------Testing Dataset Module -----------")
@@ -52,4 +56,4 @@ class TestDataset(unittest.TestCase):
         test_batch(filename, batch_size, seq_length)
         test_sample(filename, batch_size, seq_length)
         test_encode(filename, seq_length, 'ab')
-
+        test_decode(filename, seq_length, 'ab')
