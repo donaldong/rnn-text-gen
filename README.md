@@ -388,7 +388,7 @@ accuracy and score on the test data.
 A fitted `RNNTextGenerator`.
 
 ##### Example
-```
+```python
 params = {
     'learning_rate': np.linspace(0, 1, 10000, endpoint=False),
     'epoch': np.arange(1, 6),
