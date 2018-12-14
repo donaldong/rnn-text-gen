@@ -6,7 +6,11 @@ import pandas as pd
 
 
 class RNNTextGenerator:
-    """A text generator using basic cell and dynamic rnn
+    """Creates a recurrent neural network with a tensorflow RNNCell cell (which
+    performs dynamic unrolling of the `inputs`). It has an output projection
+    layer which produces the final probability for each character class. It
+    generates the text by sampling the next character based on the probability
+    distribution of the last character of the current sequence.
     """
     def __init__(
             self,
@@ -14,7 +18,7 @@ class RNNTextGenerator:
             vocab_size,
             rnn_cell=tf.nn.rnn_cell.BasicRNNCell,
             n_neurons=100,
-            activation=None,
+            activation=tf.tanh,
             optimizer=tf.train.AdamOptimizer,
             learning_rate=0.001,
             epoch=5,
@@ -22,49 +26,54 @@ class RNNTextGenerator:
             name='RNNTextGenerator',
             logdir=None,
     ):
-        """Initialize the text generator and contruct the tf graph
+        """Initialize the text generator and contruct the TensorFlow graph.
         Arguments
         ======================================================================
         seq_length: int
-            The number of characters in a sequence.
+            The number of encoded labels in a sequence.
 
         vocab_size: int
             The number of unique characters in the text.
 
         rnn_cell: tf.nn.rnn_cell.*
-            A rnn cell from tensorflow.
+            An RNN cell from `tf.nn.rnn_cell`. The cell has `n_neurons`
+            neurons, takes the `activation` funtions, and goes into
+            `tf.nn.dynamic_rnn`.
 
         n_neurons: int
-            The number of neurons in each RNN cell.
+            The number of neurons in the RNN cell.
 
-        activation: activation ops
-            An activation function for the rnn cell.
+        activation: Callable
+            The activation function (callable) for the RNN cell.
 
-        optimizer: tf.train.*Optimizer
-            An optimizer from tensorflow.
-
-        epoch: int
-            The number of times to go through the dataset.
-
-        batch_size: int
-            The number of sequences in a batch.
+        optimizer: tf.train.Optimizer
+            A subclass of `tf.train.Optimizer`. The optimizer to use for
+            minizing the loss.
 
         learning_rate:
             A Tensor or a floating point value. The learning rate of the
             optimizer.
 
+        epoch: int
+            The number of times to iterate through the dataset.
+
+        batch_size: int
+            The number of instances (sequences) in a single batch.
+
         name: string
-            The name of the net (for graph visualization in tensorboard).
+            The name of the text generator. It is used for graph visualization
+            in tensorboard (variable scope), and saving/restoring the model
+            (checkpoint name).
 
         logdir: string
-            The path to save the tensorflow summary.
+            The path to the tensorflow summary.
         """
-        self.batch_size = batch_size
-        self.epoch = epoch
-        self.name = name
-        self.tf_graph = tf.Graph()
-        with self.tf_graph.as_default():
-            self.tf_sess = tf.Session()
+        self._batch_size = batch_size
+        self._epoch = epoch
+        self._name = name
+        self._tf_graph = tf.Graph()
+        with self._tf_graph.as_default():
+            self._tf_sess = tf.Session()
             # One-hot encoded input and targets
             """placeholder
             Example
@@ -80,46 +89,59 @@ class RNNTextGenerator:
                 ...
             ]
             """
-            self.tf_input = tf.placeholder(
-                tf.float32, shape=(None, seq_length, vocab_size)
+            self._tf_input = tf.placeholder(
+                tf.float32,
+                shape=(None, seq_length, vocab_size),
+                name='inputs',
             )
-            self.tf_target = tf.placeholder(
-                tf.float32, shape=(None, seq_length, vocab_size)
+            self._tf_target = tf.placeholder(
+                tf.float32,
+                shape=(None, seq_length, vocab_size),
+                name='targets'
             )
             with tf.variable_scope(name):
-                self.tf_rnn_cell = rnn_cell(
+                self._tf_rnn_cell = rnn_cell(
                     n_neurons,
                     activation=activation,
                 )
                 outputs, _ = tf.nn.dynamic_rnn(
-                    self.tf_rnn_cell,
-                    tf.cast(self.tf_input, tf.float32),
+                    self._tf_rnn_cell,
+                    tf.cast(self._tf_input, tf.float32),
                     dtype=tf.float32,
                 )
-                logits = tf.layers.dense(outputs, vocab_size)
-                self.tf_loss = tf.reduce_mean(
-                    tf.nn.softmax_cross_entropy_with_logits_v2(
-                        logits=logits,
-                        labels=self.tf_target,
-                    )
+                logits = tf.layers.dense(
+                    outputs,
+                    vocab_size,
+                    name='output_projection',
                 )
-                self.tf_train = optimizer(
+                self._tf_prob = tf.nn.softmax(
+                    logits,
+                    name='probability',
+                )
+                with tf.variable_scope('loss'):
+                    self._tf_loss = tf.reduce_mean(
+                        tf.nn.softmax_cross_entropy_with_logits_v2(
+                            logits=logits,
+                            labels=self._tf_target,
+                        )
+                    )
+                self._tf_train = optimizer(
                     learning_rate=learning_rate
-                ).minimize(self.tf_loss)
-                self.tf_prob = tf.nn.softmax(logits)
-                self.tf_acc = tf.reduce_mean(tf.cast(
-                    tf.equal(
-                        tf.argmax(logits, 2),
-                        tf.argmax(self.tf_target, 2),
-                    ),
-                    tf.float32
-                ))
-                self.tf_saver = tf.train.Saver()
+                ).minimize(self._tf_loss)
+                with tf.variable_scope('accuracy'):
+                    self._tf_acc = tf.reduce_mean(tf.cast(
+                        tf.equal(
+                            tf.argmax(logits, 2),
+                            tf.argmax(self._tf_target, 2),
+                        ),
+                        tf.float32,
+                    ))
+                self._tf_saver = tf.train.Saver()
                 if logdir is not None:
-                    self.logger = tf.summary.FileWriter(logdir, self.tf_graph)
+                    self.logger = tf.summary.FileWriter(logdir, self._tf_graph)
             # Initialize the tf session
-            self.tf_sess.run(tf.global_variables_initializer())
-            self.tf_sess.run(tf.local_variables_initializer())
+            self._tf_sess.run(tf.global_variables_initializer())
+            self._tf_sess.run(tf.local_variables_initializer())
             self._params = {
                 'vocab_size': vocab_size,
                 'rnn_cell': rnn_cell,
@@ -132,30 +154,38 @@ class RNNTextGenerator:
                 'name': name,
             }
 
-    def get_params(self):
-        """Return the params
+    @property
+    def params(self):
+        """The parameters which define the text generator.
         """
         return self._params
 
     def fit(self, dataset, save_scores=False):
-        """Fit and train the classifier with a batch of inputs and targets
+        """Feed the dataset `epoch` times, with batches of `batch_size`
+        sequences.
+
         Arguments
         ======================================================================
         dataset: Dataset
-            The text dataset.
+            A `Dataset` object which creates batches to train the model.
 
         save_scores: boolean
-            Whether to save the scores for the fit
+            Whether to store the training accuracy and loss.
+
+        Returns
+        ======================================================================
+            If `save_scores` is `True`, it returns a `pd.DataFrame` which
+            stores the training accuracy and loss.
         """
         accs = []
         losses = []
-        for _ in range(self.epoch):
-            for batch in dataset.batch(self.batch_size):
-                self.tf_sess.run(
-                    self.tf_train,
+        for _ in range(self._epoch):
+            for batch in dataset.batch(self._batch_size):
+                self._tf_sess.run(
+                    self._tf_train,
                     feed_dict={
-                        self.tf_input: batch.inputs,
-                        self.tf_target: batch.targets,
+                        self._tf_input: batch.inputs,
+                        self._tf_target: batch.targets,
                     },
                 )
                 if save_scores:
@@ -169,24 +199,33 @@ class RNNTextGenerator:
             })
 
     def score(self, dataset, batch_size=None, n_samples=5):
-        """Get the score for the batch
+        """Measure the score of the text generator. The score is the average
+        result of `n_samples` times sampling from the dataset. It tests how the
+        model will perform on sequences it has not *completely* seen yet.
+
         Arguments
         ======================================================================
         dataset: Dataset
-            The text dataset.
+            A `Dataset` object to sample from. A sample is a single `Batch`.
+
+        batch_size: int | None
+            The number of instances (sequences) in a single batch. When
+            `batch_size` is `None`, it uses the `batch_size` for training the
+            model.
 
         n_samples: int
             The number of times to sample from the dataset for testing.
 
+        Returns
         ======================================================================
         accuracy: tf.float32
-            The accuracy on this batch.
+            The average accuracy of the `n_samples` samples.
 
         loss: tf.float32
-            The loss on this batch.
+            The average loss of the `n_samples` samples.
         """
         if batch_size is None:
-            batch_size = self.batch_size
+            batch_size = self._batch_size
         acc = [None] * n_samples
         loss = [None] * n_samples
         for i in range(n_samples):
@@ -195,58 +234,69 @@ class RNNTextGenerator:
         return np.mean(acc), np.mean(loss)
 
     def predict(self, inputs):
-        """Predict the probablities for the labels, for a batch of inputs
+        """Predict the probabilities of the next labels in each input sequence.
+
         Arguments
         ======================================================================
-        inputs: np.ndarray
-            A batch of input sequences.
-
+        inputs: tf.float32[][][]
+            The input sequences (with one-hot encoded labels).
 
         Returns
         ======================================================================
-        predictions: np.ndarray
-            A batch of sequences of probablities.
+        targets_prob: tf.float32[][][]
+            The target sequences (with the probabilities of each label). The
+            shape of the target sequences would be `[len(inputs), seq_length,
+            vocab_size]`.
+            
         """
-        return self.tf_sess.run(
-            self.tf_prob,
+        return self._tf_sess.run(
+            self._tf_prob,
             feed_dict={
-                self.tf_input: inputs,
+                self._tf_input: inputs,
             },
         )
 
     def save(self, path='./model'):
-        """Save the model
+        """Save the model in the specified path. The files use the `name` of
+        the text generator.
+
         Arguments
         ======================================================================
         path: string
             The path to store the model.
         """
-        self.tf_saver.save(
-            self.tf_sess,
-            path + '/' + self.name
+        self._tf_saver.save(
+            self._tf_sess,
+            path + '/' + self._name
         )
 
     def restore(self, path='./model'):
-        """Restore the model
+        """Restore the model in the specified path. It assumes the files use
+        the `name` of the text generator exists, or it throws exceptions.
+
         Arguments
         ======================================================================
         path: string
-            The path where the model is saved.
+            The path where the model is stored.
         """
-        self.tf_saver.restore(
-            self.tf_sess,
-            path + '/' + self.name
+        self._tf_saver.restore(
+            self._tf_sess,
+            path + '/' + self._name
         )
 
     def sample(self, dataset, start_seq, length):
-        """Generate the text using a saved model
+        """Sample from the text generator based on the predicted probability
+        distribution for the next label. For example, assume the target for the
+        input sequence `[l1, l1, l2]` is `[[l1: 90%, l2: 10%], [l1: 10%, l2:
+        90%], [l1: 10%, l2: 90%]]`, the next character is sampled from `[l1:
+        10%, l2: 90%]`. Thus the next character would be `l2 ` with a
+        probability of `0.9`, or `l1` with a probability of `0.1`.
+
         Arguments
         ======================================================================
-        model: RNNTextGenerator
-            The model to sample from.
-
         dataset: Dataset
-            The dataset to encode and decode the labels.
+            A `Dataset` object to encode and decode the labels. This method is
+            sampling from the text generator, not from the dataset.
 
         start_seq: string
             The character sequence to begin with.
@@ -257,7 +307,7 @@ class RNNTextGenerator:
         Returns
         ======================================================================
         text: string
-            The generated text.
+            The sampled text with `length` characters.
         """
         text = [None] * length
         seq = dataset.encode(start_seq)
@@ -275,14 +325,15 @@ class RNNTextGenerator:
         return dataset.decode(text)
 
     def generate(self, dataset, start_seq, length):
-        """Generate the text using a base model
+        """Generate the text from the text generator using the given
+        `start_seq`. This method wraps the `sample`. It creates a new model
+        with the new sequence length and restores the previous weights.
+
         Arguments
         ======================================================================
-        model: RNNTextGenerator
-            The base model.
-
         dataset: Dataset
-            The dataset to encode and decode the labels.
+            A `Dataset` object to encode and decode the labels. This method is
+            sampling from the text generator, not from the dataset.
 
         start_seq: string
             The character sequence to begin with.
@@ -293,7 +344,7 @@ class RNNTextGenerator:
         Returns
         ======================================================================
         text: string
-            The generated text.
+            The generated text with `length` characters.
         """
         self.save()
         model = RNNTextGenerator(
@@ -308,11 +359,11 @@ class RNNTextGenerator:
         )
 
     def _score(self, inputs, targets):
-        return self.tf_sess.run(
-            [self.tf_acc, self.tf_loss],
+        return self._tf_sess.run(
+            [self._tf_acc, self._tf_loss],
             feed_dict={
-                self.tf_input: inputs,
-                self.tf_target: targets,
+                self._tf_input: inputs,
+                self._tf_target: targets,
             },
         )
 
