@@ -85,7 +85,7 @@ assert dataset.decode(dataset.encode(text)) == text
 ```
 
 #### batch
-```python
+```
 batch(
     batch_size,
     drop_remainder=True
@@ -242,7 +242,9 @@ scores = model.fit(dataset, save_scores=True)
 ```
 score(dataset, batch_size=None, n_samples=5)
 ```
-Measure the score of the text generator. The score is the average result of `n_samples` times sampling from the dataset. It tests how the model will perform on sequences it has not *completely* seen yet.
+Measure the score of the text generator. The score is the average result of
+`n_samples` times sampling from the dataset. It tests how the model will
+perform on sequences it has not *completely* seen yet.
 
 ##### Args
 - `dataset`
@@ -345,3 +347,94 @@ print(start_seq + model.generate(
     50
 ))
 ```
+
+## ModelSelector
+Defined in
+[src/model_selector.py](https://github.com/donaldong/rnn-text-gen/blob/master/src/model_selector.py)
+
+Performs randomized search and rank the models by accuracy. It selects the best
+ranking models and allows lengthy searching (for hours/days).
+
+### Methods
+
+#### constructor
+```
+ModelSelector(
+  dataset,
+  params,
+  n_samples=5,
+):
+```
+##### Args
+- `dataset`
+A `Dataset` object to train the model.
+- `params`
+A dictionary which describes the search space.  The each key of the dictionary
+stores a list of parameters. The selector randomly choice a parameter value
+from the list, for each parameter key.
+- `n_samples`
+The number of times to sample from the dataset for testing. The selector uses
+the average accuracy to rank the models.
+
+#### search
+```
+search()
+```
+Search the parameter space. It generates a combination of parameters, fit, and
+score the text generator. The selector keeps track of the model and its average
+accuracy and score on the test data.
+
+##### Returns
+A fitted `RNNTextGenerator`.
+
+##### Example
+```
+params = {
+    'learning_rate': np.linspace(0, 1, 10000, endpoint=False),
+    'epoch': np.arange(1, 6),
+    'batch_size': np.arange(25, 100),
+}
+selector = ModelSelector(dataset, params)
+for _ in range(n):
+  selector.search()
+```
+It will randomly select a `learning_rate`, `epoch`, and `batch_size` for the
+`RNNTextGenerator`, and fit it `n` times.
+
+#### as_df
+```
+as_df()
+```
+Save the searching result (models and their scores) as a pandas data frame.
+```
+                                               model  accuracy        loss
+0  {'vocab_size': 70, 'rnn_cell': <class 'tensorf...  0.094519   88.173103
+1  {'vocab_size': 70, 'rnn_cell': <class 'tensorf...  0.068282  104.829025
+2  {'vocab_size': 70, 'rnn_cell': <class 'tensorf...  0.052424   12.201582
+```
+
+##### Returns
+A `pd.DataFrame` sorted by `accuracy` in non-increasing order.
+
+#### best_models
+```
+best_models(n)
+```
+Get the top `n` models ordered by their accuracies.
+
+##### Args
+- `n`
+The numer of best models.
+
+##### Returns
+A list of `RNNTextGenerator` with length `n`.
+
+#### best_model
+```
+best_model()
+```
+Get the model with the highest accuracy. It wraps the `best_models` method.
+
+##### Returns
+An `RNNTextGenerator` with the highest accuracy among the models the selector
+has seen so far.
