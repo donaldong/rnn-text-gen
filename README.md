@@ -1,11 +1,16 @@
+Text Generation Using RNNs
+==========================
+
 # Introduction
 Text generation is a popular problem in Data Science and Machine Learning, and
 it is a suitable task for Recurrent Neural Nets.  This report uses tensorflow
 to build an RNN text generator and builds a high-level API in Python3. The
-report is inspired by @karpathy  (min-char-rnn) and Géron (Hands-On Machine
-Learning with Scikit-Learn and TensorFlow). This is a class project in
-CST463 - Advanced Machine Learning at Cal State Monterey Bay, instructed by Dr.
-Glenn Bruns.
+report is inspired by @karpathy (
+[min-char-rnn](https://gist.github.com/karpathy/d4dee566867f8291f086)) and
+Aurélien Géron (
+[Hands-On Machine Learning with Scikit-Learn and TensorFlow](https://www.amazon.com/Hands-Machine-Learning-Scikit-Learn-TensorFlow/dp/1491962291)
+). This is a class project in CST463 - Advanced Machine Learning at Cal State
+Monterey Bay, instructed by Dr. Glenn Bruns.
 
 # Modules
 `Dataset`, `RNNTextGenerator`, and `ModelSelector` are the three main modules.
@@ -53,11 +58,14 @@ it will batch the sequences in order of the original text.
 encode(text)
 ```
 One-hot encode the text.
+
 ##### Args
 - `text`
 The original character sequence.
+
 ##### Returns
 The one-hot encoded character sequence.
+
 ##### Example
 ```python
 dataset = Dataset([filename], seq_length)
@@ -73,11 +81,14 @@ Decode the one-hot encoded sequence to text format.
 ```
 decode(seq)
 ```
+
 ##### Args
 - `seq`
 The one-hot encoded character sequence.
+
 ##### Returns
 The original character sequence.
+
 ##### Example
 ```python
 dataset = Dataset([filename], seq_length)
@@ -96,14 +107,17 @@ and `targets`). Each input and target sequence is a list of encoded labels,
 and they offset by 1 timestep, thus they have the same length. With a
 sequence `[l0, l0, l1, l1, l2]`, the input sequence would be `[l0, l0,
 l1, l1]`, and the target sequence would be `[l0, l1, l1, l2]`.
+
 ##### Args
 - `batch_size`
 The number of instances (sequences) in a single batch.
 - `drop_remainder`
 Whether the last batch should be dropped in the case of having fewer than
 `batch_size` elements.
+
 ##### Returns
 A number of batches which covers the text data.
+
 ##### Example
 ```python
 dataset = Dataset([filename], seq_length)
@@ -126,11 +140,14 @@ for batch in dataset.batch(batch_size):
 sample(batch_size)
 ```
 Radomly select some sequences (with replacement).
+
 ##### Args
 - `batch_size`
 The number of instances (sequences) in a single batch.
+
 ##### Returns
 A single batch.
+
 ##### Example
 ```python
 dataset = Dataset([filename], seq_length)
